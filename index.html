@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TwinTemp">
+<meta name="theme-color" content="#1d1411">
+<meta name="format-detection" content="telephone=no">
+<title>TwinTemp</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="u-both" data-scene="clear" data-night="0">
+
+<div id="safeProbe"></div>
+<div id="skyA" class="sky"></div>
+<div id="skyB" class="sky"></div>
+<canvas id="fx"></canvas>
+<div class="vignette"></div>
+<div class="heatfx"></div>
+
+<main id="app">
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+          <defs><clipPath id="mugClip"><rect x="10" y="24" width="34" height="30" rx="8"/></clipPath></defs>
+          <g class="steam"><path d="M20 20c-3-4 3-6 0-11"/><path d="M27 20c-3-4 3-6 0-11"/><path d="M34 20c-3-4 3-6 0-11"/></g>
+          <g clip-path="url(#mugClip)"><rect x="10" y="24" width="17" height="30" fill="#ffb36b"/><rect x="27" y="24" width="17" height="30" fill="#8fd0ff"/></g>
+          <rect x="10" y="24" width="34" height="30" rx="8" fill="none" stroke="#fff4e6" stroke-width="3"/>
+          <path d="M44 31h4a6.5 6.5 0 0 1 0 13h-4" fill="none" stroke="#fff4e6" stroke-width="3"/>
+          <g class="logo-sun"><circle cx="18.5" cy="39" r="3.6" fill="#e8772e"/><g stroke="#e8772e" stroke-width="1.6" stroke-linecap="round"><path d="M18.5 32.6v1.6M18.5 43.8v1.6M12.1 39h1.6M23.3 39h1.6M14 34.5l1.1 1.1M21.9 42.4l1.1 1.1M14 43.5l1.1-1.1M21.9 35.6l1.1-1.1"/></g></g>
+          <g class="logo-flake" stroke="#2f7fc4" stroke-width="1.7" stroke-linecap="round"><path d="M35.5 33v12M30.3 36l10.4 6M30.3 42l10.4-6"/></g>
+        </svg>
+        <h1><span class="tw">Twin</span><span class="tp">Temp</span></h1>
+      </div>
+      <div class="top-actions">
+        <button id="peekBtn" class="iconbtn" data-snd aria-label="Hide interface to watch the weather">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button id="refreshBtn" class="iconbtn" aria-label="Refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+        </button>
+        <button id="prefsBtn" class="iconbtn" aria-label="Preferences">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.3"/><circle cx="10" cy="17" r="2.3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="card hero" style="--d:0">
+      <div id="previewPill" class="preview-pill hidden" data-snd>🎬 <span id="previewName">Preview</span> · tap to return to real weather</div>
+      <div class="loc"><span class="pin">📍</span><span id="place">Finding you…</span></div>
+      <div class="cond"><span id="condIcon" class="cond-icon">☕</span><span id="condText">Brewing…</span></div>
+      <div class="twins">
+        <div class="twin f"><span class="num" id="heroF">--</span><span class="deg">°F</span></div>
+        <div class="twin-mid">≈</div>
+        <div class="twin c"><span class="num" id="heroC">--</span><span class="deg">°C</span></div>
+      </div>
+      <div class="hero-sub"><span id="feels">Feels like --</span></div>
+      <div class="hero-sub"><span id="hilo">High -- · Low --</span></div>
+      <p id="tagline" class="tagline"></p>
+      <div class="status">
+        <svg class="ring" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" class="ring-bg"/><circle id="ringFg" cx="10" cy="10" r="8" class="ring-fg" pathLength="100"/></svg>
+        <span id="statusText">Warming up…</span>
+      </div>
+    </section>
+
+    <section id="alertsCard" class="card hidden" style="--d:1">
+      <h2>⚠️ Weather alerts</h2>
+      <div id="alerts"></div>
+    </section>
+
+    <section class="card" style="--d:2">
+      <h2>🕰️ Next 12 hours</h2>
+      <div class="hscroll"><div class="hwrap"><svg id="spark" class="spark"></svg><div id="hours" class="hours"></div></div></div>
+    </section>
+
+    <section class="card" style="--d:3">
+      <h2>🌅 Daylight</h2>
+      <div class="dl-arc">
+        <svg viewBox="0 0 300 160" id="dlSvg">
+          <defs>
+            <linearGradient id="arcGrad" x1="0" x2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset=".5" stop-color="#fff1c2"/><stop offset="1" stop-color="#ff8f5a"/></linearGradient>
+            <radialGradient id="sunGlow"><stop offset="0" stop-color="#fff4c2"/><stop offset=".45" stop-color="#ffcf6a"/><stop offset="1" stop-color="#ffcf6a" stop-opacity="0"/></radialGradient>
+          </defs>
+          <line x1="8" y1="140" x2="292" y2="140" class="horizon"/>
+          <path d="M20 140 A130 130 0 0 1 280 140" class="arc-bg" pathLength="100"/>
+          <path id="arcFg" d="M20 140 A130 130 0 0 1 280 140" class="arc-fg" pathLength="100"/>
+          <g id="dlSun"><circle r="22" fill="url(#sunGlow)"/><circle r="9" fill="#ffe08a"/></g>
+          <text x="20" y="157" class="arc-lbl" text-anchor="start" id="srLbl">--</text>
+          <text x="280" y="157" class="arc-lbl" text-anchor="end" id="ssLbl">--</text>
+        </svg>
+        <div class="dl-big"><b id="dlBig">--</b><span id="dlSmall">of daylight left</span></div>
+      </div>
+      <div class="dl-bar"><span id="dlFill"></span></div>
+      <div class="dl-meta"><span id="dlPct">--</span><span id="dlNext">--</span></div>
+      <div class="dl-row">
+        <div><small>Day length</small><b id="dlLen">--</b></div>
+        <div><small>vs. yesterday</small><b id="dlDiff">--</b></div>
+        <div><small>Golden hour ≈</small><b id="dlGold">--</b></div>
+      </div>
+    </section>
+
+    <section class="card" style="--d:4">
+      <h2>📅 The week ahead</h2>
+      <div id="week"></div>
+    </section>
+
+    <section class="card" style="--d:5">
+      <h2>🧣 The cozy details</h2>
+      <div id="details" class="grid"></div>
+    </section>
+
+    <footer class="credits">
+      Weather by <b>Open-Meteo.com</b> (open-source, CC BY 4.0) · US alerts by <b>NOAA / National Weather Service</b> · Place names by <b>BigDataCloud</b> &amp; <b>OpenStreetMap</b>.<br>
+      Fun animations are for vibes — for real emergencies, follow official alerts.
+    </footer>
+  </div>
+</main>
+
+<!-- Peek-mode chip + return arrow -->
+<div id="peekChip" class="peek-chip"></div>
+<button id="peekBack" class="peek-back" aria-label="Show interface">▲</button>
+
+<canvas id="fxTop"></canvas>
+<div id="flash"></div>
+
+<!-- Preferences bottom sheet -->
+<div id="sheetBg"></div>
+<div id="sheet" role="dialog" aria-label="Preferences">
+  <div class="handle"></div>
+  <h3>Preferences</h3>
+
+  <div class="group">
+    <div class="glabel">Temperature display</div>
+    <div class="seg" id="unitSeg">
+      <button data-v="both">°F + °C</button><button data-v="f">°F only</button><button data-v="c">°C only</button>
+    </div>
+    <div class="hint">Twin mode (both at once) is the default — it's in the name, after all.</div>
+  </div>
+
+  <div class="group">
+    <div class="row"><div><div class="t">Auto-refresh every minute</div><div class="s">Updates location + weather every 60 seconds</div></div><button class="switch" id="swAuto" aria-label="Auto refresh"></button></div>
+    <div class="row"><div><div class="t">Sounds</div><div class="s">Soft taps, chimes &amp; thunder rumbles</div></div><button class="switch" id="swSound" aria-label="Sounds"></button></div>
+    <div class="row"><div><div class="t">Ambient weather sounds</div><div class="s">Rain patter, wind, or a crackling fireplace</div></div><button class="switch" id="swAmb" aria-label="Ambient sounds"></button></div>
+    <div class="row"><div><div class="t">Reduce motion</div><div class="s">Calmer effects, no flashes or shakes</div></div><button class="switch" id="swReduce" aria-label="Reduce motion"></button></div>
+  </div>
+
+  <div class="group">
+    <div class="glabel">Effect intensity</div>
+    <div class="seg" id="fxSeg"><button data-v="low">Cozy-lite</button><button data-v="medium">Just right</button><button data-v="high">Maximum</button></div>
+  </div>
+
+  <div class="group">
+    <div class="glabel">Location</div>
+    <div class="hint" id="locMode">Using your current location</div>
+    <button class="btn" id="useGps" data-snd>📍 Use my current location</button>
+    <input class="input" id="citySearch" type="search" placeholder="…or search a city" autocomplete="off" enterkeyhint="search">
+    <div class="results" id="cityResults"></div>
+  </div>
+
+  <div class="group">
+    <div class="glabel">Preview the weather effects</div>
+    <div class="seg small" id="pvSeg"><button data-v="0">☀️ Day</button><button data-v="1">🌙 Night</button></div>
+    <div class="fxgrid" id="fxGrid"></div>
+  </div>
+
+  <button class="btn ghost" id="closeSheet" data-snd>Done</button>
+</div>
+
+<!-- Loader -->
+<div id="loader" class="overlay">
+  <div class="mugwrap"><div class="mug-steam"><i></i><i></i><i></i></div><div class="mug"><span></span></div></div>
+  <h2>Brewing your forecast…</h2>
+  <p>Asking the sky politely. Please allow location access when asked.</p>
+</div>
+
+<!-- Location gate -->
+<div id="gate" class="overlay hide">
+  <div class="mugwrap"><div class="mug-steam"><i></i><i></i><i></i></div><div class="mug"><span></span></div></div>
+  <h2 id="gateTitle">Where are you, friend?</h2>
+  <p id="gateMsg">TwinTemp needs your location to brew a forecast.</p>
+  <button class="btn" id="gateRetry">📍 Try my location again</button>
+  <input class="input" id="gateSearch" type="search" placeholder="…or search a city" autocomplete="off" enterkeyhint="search">
+  <div class="results" id="gateResults"></div>
+  <p class="tiny">iPhone tip: Settings → Privacy &amp; Security → Location Services → Safari Websites → “While Using the App”.</p>
+</div>
+
+<!-- Portrait lock -->
+<div id="rotate" class="overlay">
+  <div class="rot-phone">📱</div>
+  <h2>TwinTemp only works upright</h2>
+  <p>Like a good mug of cocoa. Please rotate back to portrait ☕</p>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="sounds.js"></script>
+<script src="effects.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "TwinTemp",
+  "short_name": "TwinTemp",
+  "description": "Cozy weather with °F and °C side by side.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d1411",
+  "theme_color": "#1d1411",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
